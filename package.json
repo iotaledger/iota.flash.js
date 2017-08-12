@@ -1,0 +1,28 @@
+{
+  "name": "iota.flash.js",
+  "version": "0.0.1",
+  "description": "IOTA Flash Payment Channels",
+  "main": "./lib/flash.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/l3wi/flashLib.git"
+  },
+  "keywords": [
+    "payment",
+    "channel",
+    "tangle",
+    "iota"
+  ],
+  "authors": [
+      "Paul Handy (paul@iota.org)",
+      "Chris Dukakis (chris.dukakis@iota.org)",
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iotaledger/iota.flash.js/issues"
+  },
+  "homepage": "https://github.com/iotaledger/iota.flash.js#readme"
+}
