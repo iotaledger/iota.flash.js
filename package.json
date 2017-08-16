@@ -32,6 +32,6 @@
     "mocha": "^3.5.0"
   },
   "dependencies": {
-    "iota.crypto.js": "iotaledger/iota.crypto.js"
+    "iota.crypto.js": "github:iotaledger/iota.crypto.js"
   }
 }
