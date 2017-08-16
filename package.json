@@ -17,12 +17,21 @@
     "iota"
   ],
   "authors": [
-      "Paul Handy (paul@iota.org)",
-      "Chris Dukakis (chris.dukakis@iota.org)",
+    "Paul Handy (paul@iota.org)",
+    "Chris Dukakis (chris.dukakis@iota.org)",
+    "Lewis Freiberg ()",
+    "Peter Willemsen ()"
   ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/iotaledger/iota.flash.js/issues"
   },
-  "homepage": "https://github.com/iotaledger/iota.flash.js#readme"
+  "homepage": "https://github.com/iotaledger/iota.flash.js#readme",
+  "devDependencies": {
+    "chai": "^4.1.1",
+    "mocha": "^3.5.0"
+  },
+  "dependencies": {
+    "iota.crypto.js": "github:iotaledger/iota.crypto.js"
+  }
 }
