@@ -16,10 +16,10 @@
     "tangle",
     "iota"
   ],
-  "files": [ 
-    "/lib/multisig.js",  
-    "/lib/transfer.js" 
-  ], 
+  "files": [
+    "/lib/multisig.js",
+    "/lib/transfer.js"
+  ],
   "authors": [
     "Paul Handy (paul@iota.org)",
     "Chris Dukakis (chris.dukakis@iota.org)",
