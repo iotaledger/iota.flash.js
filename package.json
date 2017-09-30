@@ -22,10 +22,10 @@
     "/lib/transfer.js"
   ],
   "authors": [
-    "Paul Handy (paul@iota.org)",
-    "Chris Dukakis (chris.dukakis@iota.org)",
-    "Lewis Freiberg ()",
-    "Peter Willemsen ()"
+    "Paul Handy <paul@iota.org>",
+    "Chris Dukakis <chris.dukakis@iota.org>",
+    "Lewis Freiberg <>",
+    "Peter Willemsen <peter@codebuffet.co>"
   ],
   "license": "MIT",
   "bugs": {
