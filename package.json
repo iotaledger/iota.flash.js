@@ -43,6 +43,6 @@
     "webpack-stream": "^4.0.0"
   },
   "dependencies": {
-    "iota.crypto.js": "github:iotaledger/iota.crypto.js"
+    "iota.crypto.js": "github:l3wi/iota.crypto.js"
   }
 }
