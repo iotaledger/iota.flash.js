@@ -11,16 +11,8 @@
     "type": "git",
     "url": "git+https://github.com/l3wi/flashLib.git"
   },
-  "keywords": [
-    "payment",
-    "channel",
-    "tangle",
-    "iota"
-  ],
-  "files": [
-    "/lib/multisig.js",
-    "/lib/transfer.js"
-  ],
+  "keywords": ["payment", "channel", "tangle", "iota"],
+  "files": ["/lib/multisig.js", "/lib/transfer.js"],
   "authors": [
     "Paul Handy (paul@iota.org)",
     "Chris Dukakis (chris.dukakis@iota.org)",
@@ -43,6 +35,6 @@
     "webpack-stream": "^4.0.0"
   },
   "dependencies": {
-    "iota.crypto.js": "github:l3wi/iota.crypto.js"
+    "iota.crypto.js": "github:iotaledger/iota.crypto.js"
   }
 }
