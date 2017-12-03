@@ -1,81 +1,296 @@
-const IOTACrypto = require('iota.crypto.js');
-const Flash = require('../lib/flash');
-const multisig = require('../lib/multisig');
+////////////////////////////////////////////////
+//////////////  FLASH EXAMPLE  /////////////////
+////////////////////////////////////////////////
+// This example sets up a channel         //////
+// then makes a transfer from USER ONE    //////
+// to USER TWO.                           //////
+////////////////////////////////////////////////
 
-const seed = 'MTKVOCPRNTYCPSZJIXSOZEDCJBCG9BLEQMCCBSKOOKT9UMCYMAYFKWJZKGRVWZDEERGCMD9O9BEJNCQNY';
-const otherSeed = 'GBANYOVNVX99RLMPEONK9GIKLJURDIWIYVCHN9EHLGWQIDOPJNVPMCWEAEQUKBVWJMXSYRYXIRRSALBQW';
+const IOTACrypto = require("iota.crypto.js")
+const transfer = require("../lib/transfer")
+const multisig = require("../lib/multisig")
+const Helpers = require("./functions")
 
-let digests = [
-  multisig.getDigest(seed, 0, 2),
-  multisig.getDigest(otherSeed, 0, 2)
-];
-console.log(digests);
+const oneSeed =
+  "USERONEUSERONEUSERONEUSERONEUSERONEUSERONEUSERONEUSERONEUSERONEUSERONEUSERONEUSER"
+const oneSettlement =
+  "USERONE9ADDRESS9USERONE9ADDRESS9USERONE9ADDRESS9USERONE9ADDRESS9USERONE9ADDRESS9U"
+const twoSeed =
+  "USERTWOUSERTWOUSERTWOUSERTWOUSERTWOUSERTWOUSERTWOUSERTWOUSERTWOUSERTWOUSERTWOUSER"
+const twoSettlement =
+  "USERTWO9ADDRESS9USERTWO9ADDRESS9USERTWO9ADDRESS9USERTWO9ADDRESS9USERTWO9ADDRESS9U"
 
-let multisigs = [
-  multisig.composeAddress(digests)
-];
-console.log(multisigs[0]);
+//////////////////////////////////
+// INITIAL CHANNEL CONDITIONS
 
-let remainderAddress = multisigs[0].address;
+// Security level
+const SECURITY = 2
+// Number of parties taking signing part in the channel
+const SIGNERS_COUNT = 2
+// Flash tree depth
+const TREE_DEPTH = 4
+// Total channel Balance
+const CHANNEL_BALANCE = 2000
+// Users deposits
+const DEPOSITS = [1000, 1000]
 
-const flash = new Flash({
-  'index': 0,
-  'signersCount': 2,
-  'balance': 100,
-  'deposit': [50, 50],
-  'stakes': [0.5, 0.5],
-  'outputs': {},
-  'transfers': [],
-  'remainderAddress': remainderAddress 
-});
+//////////////////////////////////
+// INITAL FLASH OBJECTS
 
-digests = [
-  multisig.getDigest(seed, 1, 2),
-  multisig.getDigest(otherSeed, 2, 2)
-];
+// USER ONE - Initial Flash Object
+var oneFlash = {
+  userIndex: 0,
+  userSeed: oneSeed,
+  index: 0,
+  security: SECURITY,
+  depth: TREE_DEPTH,
+  bundles: [],
+  partialDigests: [],
+  flash: {
+    signersCount: SIGNERS_COUNT,
+    balance: CHANNEL_BALANCE,
+    deposit: DEPOSITS.slice(), // Clone correctly
+    outputs: {},
+    transfers: []
+  }
+}
 
-multisigs = [
-  multisig.composeAddress(digests)
-];
+//////////////////////////////////
+// USER TWO - Initial Flash Object
+var twoFlash = {
+  userIndex: 1,
+  userSeed: twoSeed,
+  index: 0,
+  security: SECURITY,
+  depth: TREE_DEPTH,
+  bundles: [],
+  partialDigests: [],
+  flash: {
+    signersCount: SIGNERS_COUNT,
+    balance: CHANNEL_BALANCE,
+    deposit: DEPOSITS.slice(), // Clone correctly
+    outputs: {},
+    transfers: []
+  }
+}
+console.log("Flash objects created!")
 
-let bundles = flash.composeTransfer(multisigs, 0, [{
-  'address': 'ZGHXPZYDKXPEOSQTAQOIXEEI9K9YKFKCWKYYTYAUWXK9QZAVMJXWAIZABOXHHNNBJIEBEUQRTBWGLYMTX',
-  'value': 2
-}]);
+//////////////////////////////
+//////  SETUP CHANNEL   //////
 
-console.log('Transfer', bundles);
+//////////////////////////////
+// GENERATE DIGESTS
 
-let diff = flash.getTransferDiff(multisigs, bundles);
+// USER ONE
+// Create digests for the start of the channel
+for (let i = 0; i < TREE_DEPTH + 1; i++) {
+  // Create new digest
+  const digest = multisig.getDigest(
+    oneFlash.userSeed,
+    oneFlash.index,
+    oneFlash.security
+  )
+  // Increment key index
+  oneFlash.index++
+  oneFlash.partialDigests.push(digest)
+}
 
-let signedBundles = flash.signTransfer(seed, 1, 2, multisigs, 0, bundles);
-signedBundles = flash.signTransfer(otherSeed, 2, 2, multisigs, 0, signedBundles);
+// USER TWO
+// Create digests for the start of the channel
+for (let i = 0; i < TREE_DEPTH + 1; i++) {
+  // Create new digest
+  const digest = multisig.getDigest(
+    twoFlash.userSeed,
+    twoFlash.index,
+    twoFlash.security
+  )
+  // Increment key index
+  twoFlash.index++
+  twoFlash.partialDigests.push(digest)
+}
+console.log("Inital digests generated!")
 
-signedBundles.forEach((bundle, i) => {
-  console.log('Sigs matching:', IOTACrypto.utils.validateSignatures(bundle, multisigs[i].address));
-});
+//////////////////////////////////
+// INITAL MULTISIG
 
-digests = [
-  multisig.getDigest(otherSeed, 4, 2),
-  multisig.getDigest(seed, 10, 1)
-];
+// Make an array of digests
+let allDigests = []
+allDigests[oneFlash.userIndex] = oneFlash.partialDigests
+allDigests[twoFlash.userIndex] = twoFlash.partialDigests
 
-multisigs.push(multisig.composeAddress(digests));
+// Generate the first addresses
+let oneMultisigs = oneFlash.partialDigests.map((digest, index) => {
+  // Create address
+  let addy = multisig.composeAddress(
+    allDigests.map(userDigests => userDigests[index])
+  )
+  // Add key index in
+  addy.index = digest.index
+  // Add the signing index to the object IMPORTANT
+  addy.signingIndex = oneFlash.userIndex * digest.security
+  // Get the sum of all digest security to get address security sum
+  addy.securitySum = allDigests
+    .map(userDigests => userDigests[index])
+    .reduce((acc, v) => acc + v.security, 0)
+  // Add Security
+  addy.security = digest.security
+  return addy
+})
 
-bundles.concat(flash.composeTransfer(multisigs, 0, [{
-  'address': 'QVJBIXAHSGZKFMJYTCWEVQFZPD9I99JM9ZZCSJFVVMZMGKI99NUROUXHHGEMZZQZG9GHUAFFJOXDIKJZW',
-  'value': 1 
-}]));
+let twoMultisigs = twoFlash.partialDigests.map((digest, index) => {
+  // Create address
+  let addy = multisig.composeAddress(
+    allDigests.map(userDigests => userDigests[index])
+  )
+  // Add key index in
+  addy.index = digest.index
+  // Add the signing index to the object IMPORTANT
+  addy.signingIndex = twoFlash.userIndex * digest.security
+  // Get the sum of all digest security to get address security sum
+  addy.securitySum = allDigests
+    .map(userDigests => userDigests[index])
+    .reduce((acc, v) => acc + v.security, 0)
+  // Add Security
+  addy.security = digest.security
+  return addy
+})
 
-console.log('Transfer:', bundles);
+console.log("Multisigs generated!")
 
-signedBundles = flash.signTransfer(otherSeed, 4,  2, multisigs, 0, bundles);
-signedBundles = flash.signTransfer(seed, 10,  1, multisigs, 0, signedBundles);
+//////////////////////////////////
+// CONSUME & ORGANISE ADDRESSES FOR USE
 
-signedBundles.forEach((bundle, i) => {
-  console.log('Sigs matching:', IOTACrypto.utils.validateSignatures(bundle, multisigs[i].address));
-});
+// Set remainder address (Same on both users)
+oneFlash.flash.remainderAddress = oneMultisigs.shift()
+twoFlash.flash.remainderAddress = twoMultisigs.shift()
 
-diff = flash.getTransferDiff(multisigs, bundles);
+// Nest trees
+for (let i = 1; i < oneMultisigs.length; i++) {
+  oneMultisigs[i - 1].children.push(oneMultisigs[i])
+}
+for (let i = 1; i < twoMultisigs.length; i++) {
+  twoMultisigs[i - 1].children.push(twoMultisigs[i])
+}
 
-console.log('Diff:', diff);
+// Set deposit address (Same on both users)
+// NOTE: Checksum added so users can consume manually
+// let depositAddress = iota.utils.addChecksum(multisigs[0].address)
+// oneFlash.flash.depositAddress = depositAddress
+// twoFlash.flash.depositAddress = depositAddress
 
+// Set Flash root
+oneFlash.flash.root = oneMultisigs.shift()
+twoFlash.flash.root = twoMultisigs.shift()
+
+// Set settlement addresses (Usually sent over when the digests are.)
+let settlementAddresses = [oneSettlement, twoSettlement]
+oneFlash.flash.settlementAddresses = settlementAddresses
+twoFlash.flash.settlementAddresses = settlementAddresses
+
+// Set digest/key index
+oneFlash.index = oneFlash.partialDigests.length
+twoFlash.index = twoFlash.partialDigests.length
+
+console.log("Channel Setup!")
+console.log(
+  "Transactable tokens: ",
+  oneFlash.flash.deposit.reduce((acc, v) => acc + v)
+)
+
+//////////////////////////////
+//////   TRANSACTING   //////
+
+//////////////////////////////
+// COMPOSE TX from USER ONE
+
+console.log("Creating Transaction")
+console.log("Sending 200 tokens to ", twoSettlement)
+
+// Create transfer array pointing to USER TWO
+let transfers = [
+  {
+    value: 200,
+    address: twoSettlement
+  }
+]
+
+// Create TX
+var bundles = Helpers.createTransaction(oneFlash, transfers, false)
+
+/////////////////////////////////
+/// SIGN BUNDLES
+
+// Get signatures for the bundles
+let oneSignatures = Helpers.signTransaction(oneFlash, bundles)
+
+// Generate USER TWO'S Singatures
+let twoSignatures = Helpers.signTransaction(twoFlash, bundles)
+
+// Sign bundle with your USER ONE'S signatures
+let signedBundles = transfer.appliedSignatures(bundles, oneSignatures)
+
+// ADD USER TWOS'S signatures to the partially signed bundles
+signedBundles = transfer.appliedSignatures(signedBundles, twoSignatures)
+
+/////////////////////////////////
+/// APPLY SIGNED BUNDLES
+
+// Apply transfers to User ONE
+oneFlash = Helpers.applyTransfers(oneFlash, signedBundles)
+// Save latest channel bundles
+oneFlash.bundles = signedBundles
+
+// Apply transfers to User TWO
+twoFlash = Helpers.applyTransfers(twoFlash, signedBundles)
+// Save latest channel bundles
+twoFlash.bundles = signedBundles
+
+console.log("Transaction Applied!")
+console.log(
+  "Transactable tokens: ",
+  oneFlash.flash.deposit.reduce((acc, v) => acc + v)
+)
+
+// TO DO: ADD 2 MORE TXs to demo branching
+
+//////////////////////////////
+// CLOSE Channel
+
+// Supplying the CORRECT varibles to create a closing bundle
+bundles = Helpers.createTransaction(
+  oneFlash,
+  oneFlash.flash.settlementAddresses,
+  true
+)
+
+/////////////////////////////////
+/// SIGN BUNDLES
+
+// Get signatures for the bundles
+oneSignatures = Helpers.signTransaction(oneFlash, bundles)
+
+// Generate USER TWO'S Singatures
+twoSignatures = Helpers.signTransaction(twoFlash, bundles)
+
+// Sign bundle with your USER ONE'S signatures
+signedBundles = transfer.appliedSignatures(bundles, oneSignatures)
+
+// ADD USER TWOS'S signatures to the partially signed bundles
+signedBundles = transfer.appliedSignatures(signedBundles, twoSignatures)
+
+/////////////////////////////////
+/// APPLY SIGNED BUNDLES
+
+// Apply transfers to User ONE
+oneFlash = Helpers.applyTransfers(oneFlash, signedBundles)
+// Save latest channel bundles
+oneFlash.bundles = signedBundles
+
+// Apply transfers to User TWO
+twoFlash = Helpers.applyTransfers(twoFlash, signedBundles)
+// Save latest channel bundles
+twoFlash.bundles = signedBundles
+
+console.log("Channel Closed")
+console.log("Final Bundle to be attached: ")
+console.log(signedBundles[0])
