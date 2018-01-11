@@ -32,7 +32,7 @@ const TREE_DEPTH = 4
 // Total channel Balance
 const CHANNEL_BALANCE = 2000
 // Users deposits
-const DEPOSITS = [1000, 1000]
+const DEPOSITS = [1000, 0]
 
 //////////////////////////////////
 // INITAL FLASH OBJECTS
