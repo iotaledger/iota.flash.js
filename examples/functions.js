@@ -58,7 +58,7 @@ const createTransaction = (user, actions, close) => {
   return bundles
 }
 const signTransaction = (user, bundles) => {
-  return transfer.sign(user.flash.root, user.userSeed, bundles, user.userIndex)
+  return transfer.sign(user.flash.root, user.userSeed, bundles)
 }
 const applyTransfers = (user, bundles) => {
   transfer.applyTransfers(
